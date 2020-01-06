@@ -1,7 +1,9 @@
 import os
 
 from flask import Flask
-from . import auth, blog, db
+from . import auth, blog, db, flask_redis_test, api_support
+from .demo import HelloWorld
+from .sqlachemy_decl import db_session
 
 
 def create_app(test_config=None):
@@ -9,8 +11,9 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)  # 第二个参数告诉app配置文件是相对路径
     app.config.from_mapping(
         SECRET_KEY="dev",  # it should be overridden with a random value when deploying.
-        DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite')
+        DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
         # is the path where the SQLite database file will be saved
+        REDIS_URL=flask_redis_test.REDIS_URL
     )
 
     if test_config is None:
@@ -29,6 +32,19 @@ def create_app(test_config=None):
     @app.route('/hello')
     def hello():
         return 'Hello, World!'
+
+    @app.teardown_appcontext
+    def shutdown_session(exceptoin=None):
+        '''flask will automatically remove database sessions at the end of the request'''
+        db_session.remove()
+
+    # 添加rest支持
+    api_support.init_rest(app)
+    # 测试helloworld
+    api_support.api.add_resource(HelloWorld, '/helloworld')
+
+    # 注册redis模块
+    flask_redis_test.init_redis(app)
 
     # 注册数据库模块
     db.init_app(app)

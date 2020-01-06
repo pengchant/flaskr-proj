@@ -7,6 +7,8 @@ from werkzeug.exceptions import abort
 from flaskr.auth import login_required
 from flaskr.db import get_db
 
+from flaskr.flask_redis_test import RedisClient
+
 bp = Blueprint('blog', __name__)
 
 
@@ -18,6 +20,8 @@ def index():
         ' FROM post p JOIN user u ON p.author_id = u.id'
         ' ORDER BY created DESC'
     ).fetchall()
+    # 打印一下从redis获取的值
+    print('-' * 20 + '\n', bytes.decode(RedisClient.get("test")), '\n' + '-' * 20)
     return render_template('blog/index.html', posts=posts)
 
 
